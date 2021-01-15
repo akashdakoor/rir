@@ -316,6 +316,43 @@ SEXP pirCompile(SEXP what, const Context& assumptions, const std::string& name,
                                return;
 
                            Protect p(fun->container());
+
+                            if(getenv("PIR_COMPILATION_LOGS"))
+                            {
+                                std::cout << "\n>>>> LOGGING \n";
+                                auto prevfun = DispatchTable::unpack(BODY(what))->dispatch(fun->context());
+                                if(fun->body()->codeSize == prevfun->body()->codeSize) 
+                                {
+                                    std::stringstream s3, s4;
+                                    fun->body()->disassemble(s3);
+                                    prevfun->body()->disassemble(s4);
+                                    if(s3.str() == s4.str())
+                                    {
+                                        std::cout << ">>>> Newly compiled version is same as the version previously stored in DT\n";
+                                        std::cout << ">>>> Newly compiled version context: " << const_cast<Context&>(fun->context()) <<"\n";
+                                        fun->body()->print(std::cout);
+                                        std::cout << ">>>> Existing version context: " << const_cast<Context&>(prevfun->context()) << "\n";
+                                        prevfun->body()->print(std::cout);
+                                    }
+                                    else 
+                                    {
+                                        std::cout << ">>>> Newly compiled version context: " << const_cast<Context&>(fun->context()) <<"\n";
+                                        fun->body()->disassemble(std::cout);
+                                        std::cout << ">>>> Existing version context: " << const_cast<Context&>(prevfun->context()) << "\n";
+                                        prevfun->body()->disassemble(std::cout);
+                                    }
+                                }
+                                else
+                                {
+                                    std::cout<< ">>>> codeSize of newly compiled version is different\n";
+                                    std::cout << ">>>> Newly compiled version context: " << const_cast<Context&>(fun->context()) <<"\n";
+                                    fun->body()->disassemble(std::cout);
+                                    std::cout << ">>>> Existing version context: " << const_cast<Context&>(prevfun->context()) << "\n";
+                                    prevfun->body()->disassemble(std::cout);
+                                }
+                                std::cout << "\n>>>> END\n";
+                            }
+
                            DispatchTable::unpack(BODY(what))->insert(fun);
                        },
                        [&]() {
